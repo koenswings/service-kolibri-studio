@@ -53,7 +53,9 @@ RUN pip install -r requirements-dev.txt
 ################################################################################
 
 # KSW - Build ##################################################################
-RUN yarn run build
+# We get a webpack exit code of 137 indicating a memory issue - both on Mac 
+# as well as the Pi5
+# RUN yarn run build
 ################################################################################
 
 
