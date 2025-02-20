@@ -1,2 +1,2 @@
 # service-kolibri-studio
-Build files for the Kolibri service.
+Build files for the Kolibri Studio service.
