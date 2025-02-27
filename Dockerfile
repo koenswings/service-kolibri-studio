@@ -36,7 +36,8 @@ RUN apt-get update \
 # Node packages ################################################################
 RUN npm install -g yarn && npm cache clean --force
 #COPY ./package.json ./yarn.lock   /src/
-COPY . /src/
+COPY ./* /src/
+COPY ./.* /src/
 #KSW Run yarn install twice to make sure everything got installed
 RUN yarn install 
 RUN yarn install && yarn cache clean
