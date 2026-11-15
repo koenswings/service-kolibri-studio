@@ -26,6 +26,11 @@
         type: String,
         default: '',
       },
+      // Login only: IDEA provides a local "admin" alias. Registration/reset still require an e-mail.
+      allowAdminLogin: {
+        type: Boolean,
+        default: false,
+      },
       required: {
         type: Boolean,
         default: true,
@@ -50,7 +55,10 @@
         return [
           /* eslint-disable-next-line kolibri/vue-no-undefined-string-uses */
           v => (!this.required || v.trim() ? true : commonStrings.$tr('fieldRequired')),
-          v => /.+@.+\..+/.test(v) || this.$tr('validEmailMessage'),
+          v =>
+            (this.allowAdminLogin && v.trim().toLowerCase() === 'admin') ||
+            /.+@.+\..+/.test(v) ||
+            this.$tr('validEmailMessage'),
         ];
       },
     },

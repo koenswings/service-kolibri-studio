@@ -37,3 +37,6 @@ SITE_ID = 1
 
 # No outgoing mail on an offline Pi: activation and password mails go to the container log.
 EMAIL_BACKEND = os.getenv("STUDIO_EMAIL_BACKEND") or "django.core.mail.backends.console.EmailBackend"
+
+# Local offline administrator login alias (the underlying User remains e-mail-based).
+IDEA_ADMIN_LOGIN_ALIAS = True

@@ -130,7 +130,13 @@ def login(request):
         return redirect(reverse_lazy("accounts"))
 
     data = json.loads(request.body)
-    user = User.get_for_email(data["username"])
+    username = data["username"]
+    # IDEA's local administrator can log in as "admin" as well as with their e-mail address.
+    # Alias is disabled in upstream settings and only enabled in idea_settings.
+    if getattr(settings, "IDEA_ADMIN_LOGIN_ALIAS", False) and username.strip().lower() == "admin":
+        user = User.objects.filter(is_admin=True, is_active=True).order_by("pk").first()
+    else:
+        user = User.get_for_email(username)
     password = data["password"]
 
     # User not found

@@ -33,8 +33,9 @@ to upstream commit
   - sets the Site domain: `STUDIO_SITE_DOMAIN`, else `<IDEA_HOSTNAME>.local:<IDEA_APP_PORT>` (the
     Engine writes `IDEA_HOSTNAME` into every instance `.env`), else `localhost:<IDEA_APP_PORT>`;
   - creates one admin only if there is no admin yet: `STUDIO_ADMIN_EMAIL` / `STUDIO_ADMIN_PASSWORD`,
-    defaults `admin@idea.local` / `admin911!` (the login form only accepts an e-mail address). The
-    credentials are never logged.
+    defaults `admin@idea.local` / `admin911!`. IDEA also enables the login alias `admin` (the first
+    active administrator), so the default login is `admin` / `admin911!`; registration and reset
+    still require an e-mail. The credentials are never logged.
   - It does not add upstream's sample users and channels. `--no-prepare` as the first argument (or
     `IDEA_SKIP_PREPARE=1`; the celery worker) only waits for Postgres and MinIO.
 - **Celery worker:** the same image with `make prodceleryworkers` (upstream command).

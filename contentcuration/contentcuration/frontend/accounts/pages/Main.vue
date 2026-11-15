@@ -46,6 +46,7 @@
           >
             <EmailField
               v-model="username"
+              :allow-admin-login="true"
               autofocus
             />
             <PasswordField
