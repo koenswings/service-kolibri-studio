@@ -79,6 +79,13 @@ def get_presigned_upload_url(
         bucket = settings.AWS_S3_BUCKET_NAME
         client = client or storage.s3_connection
         upload_url = _get_s3_presigned_put_url(client, bucket, filepath, md5sum_b64, lifetime_sec)
+        # IDEA: hand the browser a same-origin URL that Studio proxies to MinIO with the signed Host
+        # (utils/idea_upload.py). Unset upstream, so this is a no-op outside idea_settings.
+        upload_prefix = getattr(settings, "IDEA_SAME_ORIGIN_UPLOAD_PREFIX", None)
+        if upload_prefix:
+            from .idea_upload import same_origin_upload_url
+
+            upload_url = same_origin_upload_url(upload_url, settings.AWS_S3_ENDPOINT_URL, upload_prefix)
     else:
         raise UnknownStorageBackendError(
             "Please ensure your storage backend is either Google Cloud Storage or S3 Storage!"
