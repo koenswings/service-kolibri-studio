@@ -8,8 +8,14 @@ that needs requirements-dev (dev_settings), and it adds four sample users and fo
 channels on EVERY start. Instead, on every start (all steps are idempotent):
   - create the storage bucket with its public-read policy if it does not exist;
   - createcachetable, migrate, loadconstants (upstream "make migrate" + setup's first steps);
-  - create the admin account only if there is no admin yet
-    (STUDIO_ADMIN_EMAIL / STUDIO_ADMIN_PASSWORD, defaults as upstream setup: a@a.com / a).
+  - set the Django Site domain (loadconstants resets it to studio.learningequality.org):
+    STUDIO_SITE_DOMAIN, else <IDEA_HOSTNAME>.local:<IDEA_APP_PORT> (the Engine writes IDEA_HOSTNAME
+    into every instance .env), else localhost:<IDEA_APP_PORT>;
+  - create the admin account only if there is no admin yet: STUDIO_ADMIN_EMAIL /
+    STUDIO_ADMIN_PASSWORD (defaults admin@idea.local / admin911!). The credentials are never logged.
+
+Set IDEA_SKIP_PREPARE=1 for a second container of the same image (the celery worker): it only waits
+for Postgres and MinIO and then runs its command; studio-app does the preparation.
 """
 import logging
 import os
@@ -62,27 +68,48 @@ def wait_for_minio():
 
 
 def manage(*args):
-    logging.info("manage.py %s", " ".join(args))
+    # Log the subcommand only (the shell -c snippet is long; it holds no credentials).
+    logging.info("manage.py %s", args[0])
     subprocess.check_call(MANAGE + list(args))
 
 
 PREPARE = """
 import os
+from django.conf import settings
+from django.contrib.sites.models import Site
 from contentcuration.models import User
-from contentcuration.utils.db_tools import create_user
 from contentcuration.utils.minio_utils import ensure_storage_bucket_public
 
 ensure_storage_bucket_public(will_sleep=False)
+
+domain = os.environ["IDEA_RESOLVED_SITE_DOMAIN"]
+Site.objects.update_or_create(id=settings.SITE_ID, defaults={"domain": domain, "name": "Kolibri Studio"})
+print("Site {} domain: {}".format(settings.SITE_ID, domain))
+
 if not User.objects.filter(is_admin=True).exists():
-    create_user(
-        os.getenv("STUDIO_ADMIN_EMAIL") or "a@a.com",
-        os.getenv("STUDIO_ADMIN_PASSWORD") or "a",
-        "Admin", "User", admin=True,
-    )
+    # Not db_tools.create_user: it prints the password.
+    email = (os.getenv("STUDIO_ADMIN_EMAIL") or "admin@idea.local").strip().lower()
+    user, _new = User.objects.get_or_create(email=email)
+    user.set_password(os.getenv("STUDIO_ADMIN_PASSWORD") or "admin911!")
+    user.first_name, user.last_name = "Admin", "User"
+    user.is_staff = user.is_admin = user.is_active = True
+    user.save()
+    print("Admin account created (credentials from STUDIO_ADMIN_EMAIL / STUDIO_ADMIN_PASSWORD or the defaults)")
 """
 
 
+def site_domain(env):
+    """STUDIO_SITE_DOMAIN, else <IDEA_HOSTNAME>.local[:<IDEA_APP_PORT>], else localhost[:<IDEA_APP_PORT>]."""
+    explicit = (env.get("STUDIO_SITE_DOMAIN") or "").strip()
+    if explicit:
+        return explicit
+    host = (env.get("IDEA_HOSTNAME") or "").strip()
+    port = (env.get("IDEA_APP_PORT") or "").strip()
+    return (host + ".local" if host else "localhost") + (":" + port if port else "")
+
+
 def prepare():
+    os.environ["IDEA_RESOLVED_SITE_DOMAIN"] = site_domain(os.environ)
     manage("createcachetable")
     manage("migrate")
     manage("loadconstants")
@@ -92,7 +119,8 @@ def prepare():
 if __name__ == "__main__":
     wait_for_postgres()
     wait_for_minio()
-    prepare()
+    if os.getenv("IDEA_SKIP_PREPARE") != "1":
+        prepare()
     cmd = sys.argv[1:]
     if not cmd:
         logging.error("No command given")

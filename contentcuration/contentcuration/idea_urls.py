@@ -6,6 +6,7 @@ k8s proxies them with nginx, deploy/nginx.conf.jinja2). In docker-compose mode S
 http://localhost:9000/... instead, which only works for a browser on the host itself, and
 dev_urls.file_server redirects to <host>:9000, which needs MinIO published on a fixed host port.
 This view streams the object from MinIO instead, so no MinIO port is published.
+Uploads take the same route the other way: /content-upload/ (utils/idea_upload.py).
 """
 from django.conf import settings
 from django.core.files.storage import default_storage
@@ -15,6 +16,7 @@ from django.http import StreamingHttpResponse
 from django.urls import re_path
 
 from .urls import urlpatterns
+from .utils.idea_upload import content_upload
 
 CHUNK_SIZE = 64 * 1024
 PASS_HEADERS = ("Content-Type", "Content-Length", "ETag", "Last-Modified", "Accept-Ranges", "Content-Range")
@@ -52,5 +54,7 @@ def content_from_storage(request, storage_path):
 
 
 urlpatterns = urlpatterns + [
+    # Same-origin presigned PUT uploads, proxied to MinIO with the signed Host (utils/idea_upload.py).
+    re_path(r"^content-upload/(?P<upload_path>.+)$", content_upload, name="idea_content_upload"),
     re_path(r"^content/(?P<storage_path>.+)$", content_from_storage, name="idea_content"),
 ]
