@@ -14,8 +14,9 @@ channels on EVERY start. Instead, on every start (all steps are idempotent):
   - create the admin account only if there is no admin yet: STUDIO_ADMIN_EMAIL /
     STUDIO_ADMIN_PASSWORD (defaults admin@idea.local / admin911!). The credentials are never logged.
 
-Set IDEA_SKIP_PREPARE=1 for a second container of the same image (the celery worker): it only waits
-for Postgres and MinIO and then runs its command; studio-app does the preparation.
+A second container of the same image (the celery worker) passes --no-prepare as the first argument
+(or sets IDEA_SKIP_PREPARE=1): it only waits for Postgres and MinIO and then runs its command;
+studio-app does the preparation. Compose: entrypoint ["python", "docker/idea-entrypoint.py", "--no-prepare"].
 """
 import logging
 import os
@@ -119,9 +120,12 @@ def prepare():
 if __name__ == "__main__":
     wait_for_postgres()
     wait_for_minio()
-    if os.getenv("IDEA_SKIP_PREPARE") != "1":
-        prepare()
     cmd = sys.argv[1:]
+    skip = os.getenv("IDEA_SKIP_PREPARE") == "1"
+    if cmd[:1] == ["--no-prepare"]:
+        cmd, skip = cmd[1:], True
+    if not skip:
+        prepare()
     if not cmd:
         logging.error("No command given")
         sys.exit(2)

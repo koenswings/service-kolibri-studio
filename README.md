@@ -35,8 +35,8 @@ to upstream commit
   - creates one admin only if there is no admin yet: `STUDIO_ADMIN_EMAIL` / `STUDIO_ADMIN_PASSWORD`,
     defaults `admin@idea.local` / `admin911!` (the login form only accepts an e-mail address). The
     credentials are never logged.
-  - It does not add upstream's sample users and channels. `IDEA_SKIP_PREPARE=1` (celery worker)
-    only waits for Postgres and MinIO.
+  - It does not add upstream's sample users and channels. `--no-prepare` as the first argument (or
+    `IDEA_SKIP_PREPARE=1`; the celery worker) only waits for Postgres and MinIO.
 - **Celery worker:** the same image with `make prodceleryworkers` (upstream command).
 - `python` is in the image (`python:3.10-slim-bookworm`), so the App's `/healthz` healthcheck can use it.
 
