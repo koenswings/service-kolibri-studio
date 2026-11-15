@@ -13,7 +13,8 @@
 # Build on an ARM64 Pi (see app-kolibri-studio README "Building the images"):
 #   docker buildx build --builder <throwaway> --platform linux/arm64 --load \
 #     -t koenswings/kolibri-studio:<tag> .
-FROM python:3.10-slim-bookworm
+# Base pinned by digest (multi-arch index; linux/arm64/v8 present, checked 2026-11-15).
+FROM python:3.10-slim-bookworm@sha256:5be5aaecb962a41567bc8041f1e9e3432cb085b037fe057f9a562630b2e4b370
 
 # Set the timezone (as upstream)
 RUN ln -fs /usr/share/zoneinfo/America/Los_Angeles /etc/localtime
