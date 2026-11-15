@@ -1,0 +1,13 @@
+# Same as upstream Studio v2024.12.03 .dockerignore, plus local build output.
+node_modules/
+.git/
+.tox
+.coverage
+__pycache__
+*.pyc
+*.swp
+k8s/templates/
+cloudbuild-*.yaml
+contentcuration/build/
+contentcuration/static/
+contentcuration/contentcuration/static/studio/
